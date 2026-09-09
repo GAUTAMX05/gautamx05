@@ -1,0 +1,25 @@
+name: Refresh charts and cards
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "30 3 * * *"
+permissions:
+  contents: write
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.11"}
+      - run: |
+          python scripts/radar.py --data assets/skills.json -o assets/radar
+          python scripts/radar.py --github gautamx05 -o assets/radar-langs --limit 7 --values --curve 0.4 --exclude "shell,makefile,dockerfile,batchfile,procfile"
+          python scripts/cards.py --user gautamx05 --out assets
+          python scripts/metrics.py --user gautamx05 --out assets
+      - run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets
+          git diff --cached --quiet || git commit -m "chore: refresh charts and cards"
+          git push
